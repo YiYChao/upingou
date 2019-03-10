@@ -1,5 +1,5 @@
  //控制层 
-app.controller('goodsController' ,function($scope,$controller   ,goodsService){	
+app.controller('goodsController' ,function($scope,$controller,goodsService,itemCatService){	
 	
 	$controller('baseController',{$scope:$scope});//继承
 	
@@ -60,7 +60,10 @@ app.controller('goodsController' ,function($scope,$controller   ,goodsService){
 				if(response.success){
 					$scope.reloadList();//刷新列表
 					$scope.selectIds=[];
-				}						
+					alert(response.msg);
+				}else{
+					alert(response.msg);
+				}					
 			}		
 		);				
 	}
@@ -76,5 +79,33 @@ app.controller('goodsController' ,function($scope,$controller   ,goodsService){
 			}			
 		);
 	}
+	
+	$scope.status = ["未审核","已审核","审核未通过","关闭"]; // 商品状态
+	$scope.itemCatList = []; // 商品分类列表
+	// 加载商品分类列表
+	$scope.findItemCatList = function(){
+		itemCatService.findAll().success(
+			function(response){
+				for(var i = 0; i < response.length; i++){
+					$scope.itemCatList[response[i].id] = response[i].name;
+				}
+			}
+		);
+	}
     
+	// 修改状态
+	$scope.updateStatus = function(status){
+		goodsService.updateStatus($scope.selectIds,status).success(
+			function(response){
+				if(response.success){	//审核成功
+					alert(response.msg);
+					$scope.reloadList();	//刷新列表
+					$scope.selectIds=[];	//清空ID集合
+				}else{
+					alert(response.msg);
+				}
+			}
+		);
+	}
+	
 });	

@@ -33,7 +33,7 @@
 
 	<!-- 引用dubbo 服务 -->
 	<dubbo:application name="upingou-shop-web" />
-	<dubbo:registry address="zookeeper://192.168.25.140:2181"/>
+	<dubbo:registry address="zookeeper://58.87.64.18:2181" timeout="300000"/>
 	<dubbo:annotation package="top.upingou.shop.controller" />  	
 
 </beans>

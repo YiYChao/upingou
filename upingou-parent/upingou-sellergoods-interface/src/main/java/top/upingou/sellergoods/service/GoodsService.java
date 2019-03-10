@@ -57,5 +57,13 @@ public interface GoodsService {
 	 * @return
 	 */
 	public PageResult<TbGoods> findPage(TbGoods goods, int pageNum,int pageSize);
-	
+
+	/**
+	 * <p>Title: updateStatus</p>
+	 * <p>Description: 批量修改商品的状态</p>
+	 * <p>CreateDate:2019年3月10日 下午8:46:18</p>
+	 * @param ids	商品id列表
+	 * @param status 将要修改的状态值
+	 */
+	public void updateStatus(Long ids[], String status);	
 }
