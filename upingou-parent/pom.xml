@@ -15,6 +15,9 @@
 		<module>upingou-sellergoods-interface</module>
 		<module>upingou-manager-web</module>
 		<module>upingou-shop-web</module>
+		<module>upingou-content-interface</module>
+		<module>upingou-content-service</module>
+		<module>upingou-portal-web</module>
 	</modules>
 
 	<!-- 集中定义依赖版本号 -->

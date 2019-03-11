@@ -88,4 +88,5 @@ app.controller('sellerController' ,function($scope,$controller,sellerService){
 		);
 	}
     
+	$scope.sellerStatus = ["未审核","审核通过","审核未通过","关闭"];
 });	
