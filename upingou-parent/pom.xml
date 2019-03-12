@@ -18,6 +18,7 @@
 		<module>upingou-content-interface</module>
 		<module>upingou-content-service</module>
 		<module>upingou-portal-web</module>
+		<module>upingou-solr-util</module>
 	</modules>
 
 	<!-- 集中定义依赖版本号 -->
