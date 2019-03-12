@@ -19,6 +19,9 @@
 		<module>upingou-content-service</module>
 		<module>upingou-portal-web</module>
 		<module>upingou-solr-util</module>
+		<module>upingou-search-interface</module>
+		<module>upingou-search-service</module>
+		<module>upingou-search-web</module>
 	</modules>
 
 	<!-- 集中定义依赖版本号 -->
