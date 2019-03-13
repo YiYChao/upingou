@@ -85,6 +85,11 @@
 			<artifactId>upingou-search-interface</artifactId>
 			<version>1.0.0</version>
 		</dependency>
+		<dependency>
+			<groupId>top.upingou</groupId>
+			<artifactId>upingou-common</artifactId>
+			<version>1.0.0</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
