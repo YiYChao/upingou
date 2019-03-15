@@ -111,13 +111,20 @@ public class ItemCatServiceImpl implements ItemCatService {
 		Criteria criteria = example.createCriteria();
 		criteria.andParentIdEqualTo(parentId);
 		
-		//每次执行查询的时候，一次性读取缓存进行存储 (因为每次增删改都要执行此方法)
-		List<TbItemCat> list = findAll(); 
-		for(TbItemCat itemCat : list) {
-			redisTemplate.boundHashOps("itemCat").put(itemCat.getName(),itemCat.getTypeId()); 
+		RedisSerializer<String> stringSerializer = new StringRedisSerializer();
+        redisTemplate.setKeySerializer(stringSerializer);
+        redisTemplate.setValueSerializer(stringSerializer);
+        redisTemplate.setHashKeySerializer(stringSerializer);
+        redisTemplate.setHashValueSerializer(stringSerializer);
+        
+		if(redisTemplate.boundHashOps("itemCat").size() <= 0) {
+			//每次执行查询的时候，一次性读取缓存进行存储 (因为每次增删改都要执行此方法)
+			List<TbItemCat> list = findAll(); 
+			for(TbItemCat itemCat : list) {
+				redisTemplate.boundHashOps("itemCat").put(itemCat.getName(),itemCat.getTypeId().toString()); 
+			}
+			System.out.println("分类放入缓存");
 		}
-		 
-		System.out.println("分类放入缓存");
 		return itemCatMapper.selectByExample(example );
 	}
 	

@@ -157,14 +157,20 @@ public class TypeTemplateServiceImpl implements TypeTemplateService {
 	 * 将数据放入缓存
 	 */
 	private void save2Redis() {
+		RedisSerializer<String> stringSerializer = new StringRedisSerializer();
+        redisTemplate.setKeySerializer(stringSerializer);
+        redisTemplate.setValueSerializer(stringSerializer);
+        redisTemplate.setHashKeySerializer(stringSerializer);
+        redisTemplate.setHashValueSerializer(stringSerializer);
+		
 		List<TbTypeTemplate> list = findAll();	// 获得模板数据
 		for (TbTypeTemplate tbTypeTemplate : list) {
 			List<Map> brandList = JSON.parseArray(tbTypeTemplate.getBrandIds(), Map.class);	// 存储品牌列表
-			redisTemplate.boundHashOps("brandList").put(tbTypeTemplate.getId(), brandList);
+			redisTemplate.boundHashOps("brandList").put(tbTypeTemplate.getId().toString(), JSON.toJSONString(brandList));
 			
 			// 存储规格列表
 			List<Map> specList = findSpecList(tbTypeTemplate.getId()); 	// //根据模板ID查询规格列表
-			redisTemplate.boundHashOps("specList").put(tbTypeTemplate.getId(), specList);
+			redisTemplate.boundHashOps("specList").put(tbTypeTemplate.getId().toString(), JSON.toJSONString(specList));
 			
 		}
 		System.out.println("品牌规格放入缓存");

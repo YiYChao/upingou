@@ -13,7 +13,7 @@
 	<dubbo:protocol name="dubbo" port="20883"></dubbo:protocol>
 
 	<dubbo:application name="upingou-search-service" />
-	<dubbo:provider timeout="30000"/>
+	<dubbo:provider timeout="90000"/>
 	<dubbo:registry address="zookeeper://192.168.25.140:2181"/>
 	<!-- <dubbo:registry address="zookeeper://58.87.64.18:2181"/> -->
 	<dubbo:annotation package="top.upingou.search.service.impl" />

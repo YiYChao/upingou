@@ -8,22 +8,25 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.data.solr.core.SolrTemplate;
 import org.springframework.data.solr.core.query.Criteria;
+import org.springframework.data.solr.core.query.FilterQuery;
 import org.springframework.data.solr.core.query.GroupOptions;
 import org.springframework.data.solr.core.query.HighlightOptions;
 import org.springframework.data.solr.core.query.HighlightQuery;
 import org.springframework.data.solr.core.query.Query;
+import org.springframework.data.solr.core.query.SimpleFilterQuery;
 import org.springframework.data.solr.core.query.SimpleHighlightQuery;
-import org.springframework.data.solr.core.query.SimpleQuery;
 import org.springframework.data.solr.core.query.result.GroupEntry;
 import org.springframework.data.solr.core.query.result.GroupPage;
 import org.springframework.data.solr.core.query.result.GroupResult;
 import org.springframework.data.solr.core.query.result.HighlightEntry;
 import org.springframework.data.solr.core.query.result.HighlightPage;
-import org.springframework.data.solr.core.query.result.ScoredPage;
 
 import com.alibaba.dubbo.config.annotation.Service;
+import com.alibaba.fastjson.JSON;
 
 import top.upingou.pojo.TbItem;
 import top.upingou.search.service.ItemSearchService;
@@ -33,14 +36,16 @@ import top.upingou.search.service.ItemSearchService;
  * @author YiChao
  *
  */
-@Service(timeout=10000)
+@Service
 public class ItemSearchServiceImpl implements ItemSearchService{
 
 	@Autowired
 	private SolrTemplate solrTemplate;
+	@SuppressWarnings("rawtypes")
 	@Autowired
 	private RedisTemplate redisTemplate;
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public Map<String, Object> search(Map searchMap) {
 		Map<String,Object> map=new HashMap<>();
@@ -50,9 +55,14 @@ public class ItemSearchServiceImpl implements ItemSearchService{
 		// 2.根据从关键字查询商品分类
 		List<String> categoryList = searchCategoryList(searchMap);
 		map.put("categoryList", categoryList);
-		// 查询品牌和规格列表
-		if(categoryList.size() > 0) {
-			map.putAll(searchBrandAndSpecList(categoryList.get(0)));
+		// 3.查询品牌和规格列表
+		String categoryName = (String)searchMap.get("category");
+		if(!"".equals(categoryName)){	// 如果有分类名称
+			map.putAll(searchBrandAndSpecList(categoryName));			
+		}else{	// 如果没有分类名称，按照第一个查询
+			if(categoryList.size()>0){
+				map.putAll(searchBrandAndSpecList(categoryList.get(0)));
+			}
 		}
 		return map;
 	}
@@ -62,6 +72,7 @@ public class ItemSearchServiceImpl implements ItemSearchService{
 	 * @param searchMap
 	 * @return
 	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Map searchList(Map searchMap) {
 		Map map = new HashMap();
 		
@@ -76,6 +87,30 @@ public class ItemSearchServiceImpl implements ItemSearchService{
 		Criteria criteria = new Criteria("item_keywords").is(searchMap.get("keywords"));
 		query.addCriteria(criteria);	// 添加 关键字查询
 		
+		// 按分类筛选
+		if(!"".equals(searchMap.get("category"))){			
+			Criteria filterCriteria=new Criteria("item_category").is(searchMap.get("category"));
+			FilterQuery filterQuery=new SimpleFilterQuery(filterCriteria);
+			query.addFilterQuery(filterQuery);
+		}
+
+		// 按品牌筛选
+		if(!"".equals(searchMap.get("brand"))){			
+			Criteria filterCriteria=new Criteria("item_brand").is(searchMap.get("brand"));
+			FilterQuery filterQuery=new SimpleFilterQuery(filterCriteria);
+			query.addFilterQuery(filterQuery);
+		}
+		
+		// 过滤规格
+		if(searchMap.get("spec")!=null){
+				Map<String,String> specMap= (Map) searchMap.get("spec");
+				for(String key:specMap.keySet() ){
+					Criteria filterCriteria=new Criteria("item_spec_"+key).is( specMap.get(key) );
+					FilterQuery filterQuery=new SimpleFilterQuery(filterCriteria);
+					query.addFilterQuery(filterQuery);				
+				}			
+		}
+
 		HighlightPage<TbItem> highlightPage = solrTemplate.queryForHighlightPage(query , TbItem.class);
 		for(HighlightEntry<TbItem> entry : highlightPage.getHighlighted()) {
 			TbItem item = entry.getEntity(); 	// 获得原实体类
@@ -92,6 +127,7 @@ public class ItemSearchServiceImpl implements ItemSearchService{
 	 * @param searchMap
 	 * @return
 	 */
+	@SuppressWarnings("rawtypes")
 	public List<String> searchCategoryList(Map searchMap) {
 		List<String> list = new ArrayList<String>();
 		
@@ -120,14 +156,21 @@ public class ItemSearchServiceImpl implements ItemSearchService{
 	 * @param category	分类名称
 	 * @return	返回封装的Map对象
 	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Map searchBrandAndSpecList(String category) {
+		RedisSerializer<String> stringSerializer = new StringRedisSerializer();
+        redisTemplate.setKeySerializer(stringSerializer);
+        redisTemplate.setValueSerializer(stringSerializer);
+        redisTemplate.setHashKeySerializer(stringSerializer);
+        redisTemplate.setHashValueSerializer(stringSerializer);
+       
 		Map map = new HashMap();
-		Long typeId = (Long) redisTemplate.boundHashOps("itemCat").get(category);	// 获取模板Id
+		String typeId = redisTemplate.boundHashOps("itemCat").get(category).toString();	// 获取模板Id
 		if(typeId != null) {
-			List brandList = (List) redisTemplate.boundHashOps("brandList").get(typeId);	// 根据模板ID查询品牌列表
+			List brandList = JSON.parseArray(redisTemplate.boundHashOps("brandList").get(typeId).toString(),Map.class);	// 根据模板ID查询品牌列表
 			map.putIfAbsent("brandList", brandList);
 			
-			List specList = (List) redisTemplate.boundHashOps("specList").get(typeId);	// 根据模板ID查询规格列表
+			List specList = JSON.parseArray(redisTemplate.boundHashOps("specList").get(typeId).toString(),Map.class);	// 根据模板ID查询规格列表
 			map.putIfAbsent("specList", specList);
 		}
 		return map;
