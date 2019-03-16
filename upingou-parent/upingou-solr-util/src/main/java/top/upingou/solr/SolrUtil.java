@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.data.solr.core.SolrTemplate;
+import org.springframework.data.solr.core.query.Query;
+import org.springframework.data.solr.core.query.SimpleQuery;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSON;
@@ -29,6 +31,9 @@ public class SolrUtil {
 	@Autowired
 	private SolrTemplate solrTemplate;
 	
+	/**
+	 * 导入全部数据
+	 */
 	public void importItemData() {
 		TbItemExample example = new TbItemExample();
 		Criteria criteria = example.createCriteria();
@@ -45,9 +50,19 @@ public class SolrUtil {
 		solrTemplate.commit();
 	}
 	
+	/**
+	 * 删除全部数据
+	 */
+	public void deleteAll() {
+		Query query=new SimpleQuery("*:*");
+		solrTemplate.delete(query);
+		solrTemplate.commit();
+	}
+	
 	public static void main(String[] args) {
 		ApplicationContext context = new ClassPathXmlApplicationContext("classpath*:spring/applicationContext*.xml");
 		SolrUtil solrUtil = context.getBean("solrUtil",SolrUtil.class);
-		solrUtil.importItemData();
+//		solrUtil.importItemData();
+		solrUtil.deleteAll();
 	}
 }

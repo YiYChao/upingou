@@ -1,6 +1,7 @@
 package top.upingou.sellergoods.service;
 import java.util.List;
 import top.upingou.pojo.TbGoods;
+import top.upingou.pojo.TbItem;
 import top.upingou.pojogroup.Goods;
 import entity.PageResult;
 /**
@@ -66,4 +67,12 @@ public interface GoodsService {
 	 * @param status 将要修改的状态值
 	 */
 	public void updateStatus(Long ids[], String status);	
+	
+	/**
+	 * 根据商品Id(SPU)查询Item表的信息
+	 * @param goodsIds	商品ID
+	 * @param status	视频状态
+	 * @return
+	 */
+	public List<TbItem> findItemListByGoodsIdandStatus(Long[] goodsIds, String status );
 }

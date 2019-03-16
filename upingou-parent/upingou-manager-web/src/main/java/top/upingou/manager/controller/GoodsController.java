@@ -1,4 +1,5 @@
 package top.upingou.manager.controller;
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.PathVariable;
@@ -7,7 +8,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.alibaba.dubbo.config.annotation.Reference;
 import top.upingou.pojo.TbGoods;
+import top.upingou.pojo.TbItem;
 import top.upingou.pojogroup.Goods;
+import top.upingou.search.service.ItemSearchService;
 import top.upingou.sellergoods.service.GoodsService;
 
 import entity.PageResult;
@@ -23,7 +26,8 @@ public class GoodsController {
 
 	@Reference
 	private GoodsService goodsService;
-	
+	@Reference
+	private ItemSearchService itemSearchService;
 	/**
 	 * 返回全部列表
 	 * @return
@@ -78,6 +82,8 @@ public class GoodsController {
 	public UResult delete(Long [] ids){
 		try {
 			goodsService.delete(ids);
+			// 同步删除索引
+			itemSearchService.deleteByGoodsIds(Arrays.asList(ids));
 			return new UResult(true, "删除成功"); 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -109,6 +115,18 @@ public class GoodsController {
 	public UResult updateStatus(@PathVariable Long[] ids, @PathVariable String status) {
 		try {
 			goodsService.updateStatus(ids, status);
+			
+			// 按照SPU ID查询 SKU列表(状态为1)		
+			if(status.equals("1")){//审核通过
+				List<TbItem> itemList = goodsService.findItemListByGoodsIdandStatus(ids, status);						
+				// 调用搜索接口实现数据批量导入
+				if(itemList.size()>0){				
+					itemSearchService.importList(itemList);
+				}else{
+					System.out.println("没有明细数据");
+				}
+			}
+			
 			return new UResult(true, "审核成功");
 		} catch (Exception e) {
 			return new UResult(true, "审核失败");
